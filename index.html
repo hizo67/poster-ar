@@ -13,6 +13,17 @@
              viewport-fit=cover"
   >
 
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- iPhone standalone mode -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Poster AR">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
@@ -25,29 +36,18 @@
       height: 100%;
       overflow: hidden;
       background: #000;
-    }
-
-    body {
       position: fixed;
       inset: 0;
     }
 
-    a-scene {
+    a-scene,
+    .a-canvas {
       position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
+      inset: 0 !important;
       width: 100vw !important;
       height: 100dvh !important;
       margin: 0 !important;
       padding: 0 !important;
-    }
-
-    .a-canvas {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100dvh !important;
     }
 
     video {
@@ -109,7 +109,6 @@
 
 
   <script>
-
     const video = document.querySelector("#animation");
     const target = document.querySelector("#posterTarget");
 
@@ -120,7 +119,6 @@
     target.addEventListener("targetLost", () => {
       video.pause();
     });
-
   </script>
 
 </body>
