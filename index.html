@@ -1,408 +1,70 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width,
-             initial-scale=1.0,
-             maximum-scale=1.0,
-             user-scalable=no,
-             viewport-fit=cover"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
   >
-
-  <link rel="manifest" href="./manifest.json">
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Poster AR">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#000000">
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-  <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-      position: fixed;
-      inset: 0;
-    }
-
-    a-scene,
-    .a-canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100dvh !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    video {
-      object-fit: cover !important;
-    }
-
-    /* RECORD BUTTON */
-
-    #recordBtn {
-      position: fixed;
-      z-index: 99999;
-
-      left: 50%;
-      bottom: 35px;
-      transform: translateX(-50%);
-
-      width: 68px;
-      height: 68px;
-
-      border-radius: 50%;
-
-      border: 4px solid white;
-
-      background: rgba(255,255,255,0.25);
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      padding: 0;
-
-      cursor: pointer;
-    }
-
-    #recordInner {
-      width: 52px;
-      height: 52px;
-
-      border-radius: 50%;
-
-      background: #ff2d2d;
-
-      transition: all 0.2s ease;
-    }
-
-    /* Khi đang record */
-
-    #recordBtn.recording #recordInner {
-      width: 28px;
-      height: 28px;
-
-      border-radius: 6px;
-    }
-
-    #recordingText {
-      position: fixed;
-
-      top: 25px;
-      left: 50%;
-
-      transform: translateX(-50%);
-
-      z-index: 99999;
-
-      color: white;
-
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      font-weight: bold;
-
-      background: rgba(0,0,0,0.45);
-
-      padding: 7px 12px;
-
-      border-radius: 20px;
-
-      display: none;
-    }
-  </style>
-
 </head>
 
-
-<body>
-
-  <!-- RECORDING INDICATOR -->
-
-  <div id="recordingText">
-    ● REC
-  </div>
-
-
-  <!-- RECORD BUTTON -->
-
-  <button id="recordBtn">
-    <div id="recordInner"></div>
-  </button>
-
-
-  <!-- AR -->
+<body style="margin:0; padding:0; overflow:hidden; width:100vw; height:100vh;">
 
   <a-scene
-    mindar-image="
-      imageTargetSrc: ./targets/targets.mind;
-      filterMinCF: 0.003;
-      filterBeta: 700;
-    "
+    style="position:fixed; top:0; left:0; width:100vw; height:100vh;"
+    mindar-image="imageTargetSrc: ./targets/targets.mind; filterMinCF: 0.003; filterBeta: 700;"
     embedded
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="preserveDrawingBuffer: true"
   >
 
     <a-assets>
-
       <video
         id="animation"
         src="./assets/animation.mp4"
-        preload="auto"
         loop
         muted
         playsinline
         webkit-playsinline
       ></video>
-
     </a-assets>
-
 
     <a-camera
       position="0 0 0"
-      look-controls="enabled: false"
-    ></a-camera>
-
+      look-controls="enabled: false">
+    </a-camera>
 
     <a-entity
       id="posterTarget"
-      mindar-image-target="targetIndex: 0"
-    >
+      mindar-image-target="targetIndex: 0">
 
       <a-video
         src="#animation"
         width="1"
         height="1.25"
-        position="0 0 0.01"
-      ></a-video>
+        position="0 0 0.01">
+      </a-video>
 
     </a-entity>
 
   </a-scene>
 
-
-<script>
-
-  /* ------------------------
-     AR VIDEO
-  ------------------------ */
-
-  const video = document.querySelector("#animation");
-  const target = document.querySelector("#posterTarget");
-
-  target.addEventListener("targetFound", () => {
-
-    video.play();
-
-  });
-
-  target.addEventListener("targetLost", () => {
-
-    video.pause();
-
-  });
-
-
-  /* ------------------------
-     RECORD
-  ------------------------ */
-
-  const recordBtn = document.querySelector("#recordBtn");
-  const recordingText = document.querySelector("#recordingText");
-
-  let mediaRecorder;
-  let recordedChunks = [];
-  let isRecording = false;
-
-
-  recordBtn.addEventListener("click", async () => {
-
-    /* FIRST PRESS = START */
-
-    if (!isRecording) {
-
-      const scene = document.querySelector("a-scene");
-
-      const canvas = scene.canvas;
-
-      if (!canvas || !canvas.captureStream) {
-
-        alert("Recording is not supported on this browser.");
-
-        return;
-      }
-
-
-      /* Capture AR canvas at 30fps */
-
-      const stream = canvas.captureStream(30);
-
-
-      /* Pick supported video format */
-
-      let mimeType = "";
-
-      if (
-        MediaRecorder.isTypeSupported(
-          "video/webm;codecs=vp9"
-        )
-      ) {
-
-        mimeType = "video/webm;codecs=vp9";
-
-      }
-
-      else if (
-        MediaRecorder.isTypeSupported(
-          "video/webm;codecs=vp8"
-        )
-      ) {
-
-        mimeType = "video/webm;codecs=vp8";
-
-      }
-
-      else if (
-        MediaRecorder.isTypeSupported(
-          "video/mp4"
-        )
-      ) {
-
-        mimeType = "video/mp4";
-
-      }
-
-
-      try {
-
-        mediaRecorder = new MediaRecorder(
-          stream,
-          mimeType ? { mimeType } : {}
-        );
-
-      }
-
-      catch (error) {
-
-        alert("This browser cannot start AR recording.");
-
-        console.error(error);
-
-        return;
-
-      }
-
-
-      recordedChunks = [];
-
-
-      mediaRecorder.ondataavailable = (event) => {
-
-        if (event.data.size > 0) {
-
-          recordedChunks.push(event.data);
-
-        }
-
-      };
-
-
-      mediaRecorder.onstop = () => {
-
-        const type =
-          mediaRecorder.mimeType ||
-          "video/webm";
-
-        const blob = new Blob(
-          recordedChunks,
-          { type: type }
-        );
-
-
-        const url =
-          URL.createObjectURL(blob);
-
-
-        const a =
-          document.createElement("a");
-
-        a.href = url;
-
-
-        if (type.includes("mp4")) {
-
-          a.download = "AR-recording.mp4";
-
-        }
-
-        else {
-
-          a.download = "AR-recording.webm";
-
-        }
-
-
-        document.body.appendChild(a);
-
-        a.click();
-
-        a.remove();
-
-
-        setTimeout(() => {
-
-          URL.revokeObjectURL(url);
-
-        }, 1000);
-
-      };
-
-
-      mediaRecorder.start();
-
-
-      isRecording = true;
-
-      recordBtn.classList.add("recording");
-
-      recordingText.style.display = "block";
-
-    }
-
-
-    /* SECOND PRESS = STOP */
-
-    else {
-
-      mediaRecorder.stop();
-
-      isRecording = false;
-
-      recordBtn.classList.remove("recording");
-
-      recordingText.style.display = "none";
-
-    }
-
-  });
-
-</script>
+  <script>
+    const video = document.querySelector("#animation");
+    const target = document.querySelector("#posterTarget");
+
+    target.addEventListener("targetFound", () => {
+      video.play();
+    });
+
+    target.addEventListener("targetLost", () => {
+      video.pause();
+    });
+  </script>
 
 </body>
-
 </html>
